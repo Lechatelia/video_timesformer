@@ -1,13 +1,13 @@
 TRAIN:
   ENABLE: True
   DATASET: kinetics
-  BATCH_SIZE: 4
+  BATCH_SIZE: 64
   EVAL_PERIOD: 1
   CHECKPOINT_PERIOD: 5
   AUTO_RESUME: True
 DATA:
-  PATH_TO_DATA_DIR: /nfs/zhujinguo/datasets/open_source_dataset/K400
-  PATH_PREFIX: /nfs/zhujinguo/datasets/open_source_dataset/K400
+  PATH_TO_DATA_DIR: /mnt/lustrenew/share_data/zhujinguo/open_source_dataset/K400
+  PATH_PREFIX: /mnt/lustrenew/share_data/zhujinguo/open_source_dataset/K400
   NUM_FRAMES: 8
   SAMPLING_RATE: 32
   TRAIN_JITTER_SCALES: [256, 320]
@@ -40,7 +40,7 @@ TEST:
 DATA_LOADER:
   NUM_WORKERS: 2
   PIN_MEMORY: True
-NUM_GPUS: 1
+NUM_GPUS: 8
 NUM_SHARDS: 1
 RNG_SEED: 0
 OUTPUT_DIR: output

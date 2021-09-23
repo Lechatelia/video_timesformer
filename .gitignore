@@ -12,7 +12,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+arun_log
 # Distribution / packaging
 .Python
 build/
@@ -141,3 +141,5 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+work_dirs
