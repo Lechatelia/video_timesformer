@@ -27,7 +27,7 @@ logger = logging.get_logger(__name__)
 
 
 def train_epoch(
-    train_loader, model, optimizer, train_meter, cur_epoch, cfg, writer=None
+    train_loader, model, optimizer, train_meter, cur_epoch, cfg, writer=None, scaler=None,
 ):
     """
     Perform the video training for one epoch.
@@ -84,10 +84,11 @@ def train_epoch(
            inputs, labels = mixup_fn(inputs, labels)
            loss_fun = SoftTargetCrossEntropy()
 
-        if cfg.DETECTION.ENABLE:
-            preds = model(inputs, meta["boxes"])
-        else:
-            preds = model(inputs)
+        with torch.cuda.amp.autocast():
+            if cfg.DETECTION.ENABLE:
+                preds = model(inputs, meta["boxes"])
+            else:
+                preds = model(inputs)
 
         # Compute the loss.
         loss = loss_fun(preds, labels)
@@ -98,22 +99,27 @@ def train_epoch(
         # check Nan Loss.
         misc.check_nan_losses(loss)
 
+        
+        optimizer.zero_grad()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
-        if cur_global_batch_size >= cfg.GLOBAL_BATCH_SIZE:
-            # Perform the backward pass.
-            optimizer.zero_grad()
-            loss.backward()
-            # Update the parameters.
-            optimizer.step()
-        else:
-            if cur_iter == 0:
-                optimizer.zero_grad()
-            loss.backward()
-            if (cur_iter + 1) % num_iters == 0:
-                for p in model.parameters():
-                    p.grad /= num_iters
-                optimizer.step()
-                optimizer.zero_grad()
+        # if cur_global_batch_size >= cfg.GLOBAL_BATCH_SIZE:
+        #     # Perform the backward pass.
+        #     optimizer.zero_grad()
+        #     loss.backward()
+        #     # Update the parameters.
+        #     optimizer.step()
+        # else:
+        #     if cur_iter == 0:
+        #         optimizer.zero_grad()
+        #     loss.backward()
+        #     if (cur_iter + 1) % num_iters == 0:
+        #         for p in model.parameters():
+        #             p.grad /= num_iters
+        #         optimizer.step()
+        #         optimizer.zero_grad()
 
         if cfg.DETECTION.ENABLE:
             if cfg.NUM_GPUS > 1:
@@ -414,6 +420,7 @@ def train(cfg):
     # Construct the optimizer.
     optimizer = optim.construct_optimizer(model, cfg)
 
+    scaler = torch.cuda.amp.GradScaler()
     # Load a checkpoint to resume training if applicable.
     if not cfg.TRAIN.FINETUNE:
       start_epoch = cu.load_train_checkpoint(cfg, model, optimizer)
@@ -475,7 +482,7 @@ def train(cfg):
 
         # Train for one epoch.
         train_epoch(
-            train_loader, model, optimizer, train_meter, cur_epoch, cfg, writer
+            train_loader, model, optimizer, train_meter, cur_epoch, cfg, writer, scaler=scaler
         )
 
         is_checkp_epoch = cu.is_checkpoint_epoch(
