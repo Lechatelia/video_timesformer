@@ -20,7 +20,8 @@
             "justMyCode": false,
             "args": [
                 "--cfg",
-                "configs/Kinetics/TimeSformer_jointST_8x32_224_1gpu.yaml",
+                "configs/Kinetics/TimeSformer_jointST_8x32_224_1gpu_test.yaml",
+                // "configs/Kinetics/TimeSformer_jointST_8x32_224_4gpu.yaml",
                 // "--num-gpus", "1",
                 // "--eval-only",
                 // "--init_method", "slurm",
